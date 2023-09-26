@@ -32,7 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TIME 50//0.5s
+#define TIME 25//0.25s
 #define max_led 4
 enum state {
 	DISPLAY1, DISPLAY2, DISPLAY3, DISPLAY4
@@ -63,7 +63,7 @@ static void MX_TIM2_Init(void);
 /* USER CODE BEGIN 0 */
 struct s_timer timer;
 struct s_timer timer1;
-uint8_t led_buffer[max_led] = { 1, 2, 3, 4 };
+uint8_t led_buffer[max_led] = { 0, 7, 5, 9 };
 unsigned index_led = 0;
 struct seven_led led;
 void update7led(uint8_t i);
@@ -84,7 +84,7 @@ int main(void) {
 	HAL_Init();
 
 	/* USER CODE BEGIN Init */
-
+	uint8_t count = 0;
 	init7SEG(&led, GPIOB, GPIO_PIN_0, GPIO_PIN_1, GPIO_PIN_2, GPIO_PIN_3,
 	GPIO_PIN_4, GPIO_PIN_5, GPIO_PIN_6);
 	/* USER CODE END Init */
@@ -109,10 +109,15 @@ int main(void) {
 	/* USER CODE BEGIN WHILE */
 	while (1) {
 		if (!timer.st) {
+			count++;
 			update7led(index_led++);
 			if (index_led > 3)
 				index_led = 0;
 			set_timer(&timer, TIME);
+		}
+		if (count >= 4) {
+			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4 | GPIO_PIN_5);
+			count = 0;
 		}
 	}
 	/* USER CODE END 3 */
