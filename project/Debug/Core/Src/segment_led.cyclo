@@ -1,0 +1,3 @@
+../Core/Src/segment_led.c:9:6:display	1
+../Core/Src/segment_led.c:20:6:display7SEG	11
+../Core/Src/segment_led.c:56:6:init7SEG	1
