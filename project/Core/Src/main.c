@@ -67,6 +67,7 @@ uint8_t led_buffer[max_led] = { 0, 7, 5, 9 };
 unsigned index_led = 0;
 struct seven_led led;
 void update7led(uint8_t i);
+void update_led_buf(uint8_t hour, uint8_t minute);
 /* USER CODE END 0 */
 
 /**
@@ -102,22 +103,37 @@ int main(void) {
 	/* USER CODE BEGIN 2 */
 	HAL_TIM_Base_Start_IT(&htim2);
 	set_timer(&timer, TIME);
-
+	uint8_t hour = 15, minute = 8, second = 50;
+	update_led_buf(hour, minute);
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
 		if (!timer.st) {
+			if (count > 3) {
+				second++;
+				if (second >= 60) {
+					second = 0;
+					minute++;
+				}
+				if (minute >= 60) {
+					minute = 0;
+					hour++;
+				}
+				if (hour >= 24) {
+					hour = 0;
+				}
+				update_led_buf(hour, minute);
+				HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4);
+				count = 0;
+			}
 			count++;
 			update7led(index_led++);
-			if (index_led > 3)
+			if(index_led > 3){
 				index_led = 0;
+			}
 			set_timer(&timer, TIME);
-		}
-		if (count >= 4) {
-			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4 | GPIO_PIN_5);
-			count = 0;
 		}
 	}
 	/* USER CODE END 3 */
@@ -245,6 +261,14 @@ static void MX_GPIO_Init(void) {
 }
 
 /* USER CODE BEGIN 4 */
+void update_led_buf(uint8_t hour, uint8_t minute) {
+	if (0 <= hour && hour < 24 && 0 <= minute && minute < 60) {
+		led_buffer[0] = hour / 10;
+		led_buffer[1] = hour % 10;
+		led_buffer[2] = minute / 10;
+		led_buffer[3] = minute % 10;
+	}
+}
 void off_all7led() {
 	uint16_t pin = GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9;
 	HAL_GPIO_WritePin(GPIOA, pin, 1);
