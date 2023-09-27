@@ -61,13 +61,20 @@ static void MX_TIM2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-struct s_timer timer;
-struct s_timer timer1;
-uint8_t led_buffer[max_led] = { 0, 7, 5, 9 };
-unsigned index_led = 0;
-struct seven_led led;
-void update7led(uint8_t i);
-void update_led_buf(uint8_t hour, uint8_t minute);
+int timer0_counter = 0;
+int timer0_flag = 0;
+int TIMER_CYCLE = 10;
+void setTimer0(int duration) {
+	timer0_counter = duration / TIMER_CYCLE;
+	timer0_flag = 0;
+}
+void timer_run() {
+	if (timer0_counter > 0) {
+		timer0_counter--;
+		if (timer0_counter == 0)
+			timer0_flag = 1;
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -85,9 +92,7 @@ int main(void) {
 	HAL_Init();
 
 	/* USER CODE BEGIN Init */
-	uint8_t count = 0;
-	init7SEG(&led, GPIOB, GPIO_PIN_0, GPIO_PIN_1, GPIO_PIN_2, GPIO_PIN_3,
-	GPIO_PIN_4, GPIO_PIN_5, GPIO_PIN_6);
+
 	/* USER CODE END Init */
 
 	/* Configure the system clock */
@@ -101,39 +106,19 @@ int main(void) {
 	MX_GPIO_Init();
 	MX_TIM2_Init();
 	/* USER CODE BEGIN 2 */
+	//setTimer0(1);
+	setTimer0(10);
 	HAL_TIM_Base_Start_IT(&htim2);
-	set_timer(&timer, TIME);
-	uint8_t hour = 15, minute = 8, second = 50;
-	update_led_buf(hour, minute);
+	//setTimer0(1000);
+
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
-		if (!timer.st) {
-			if (count > 3) {
-				second++;
-				if (second >= 60) {
-					second = 0;
-					minute++;
-				}
-				if (minute >= 60) {
-					minute = 0;
-					hour++;
-				}
-				if (hour >= 24) {
-					hour = 0;
-				}
-				update_led_buf(hour, minute);
-				HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4);
-				count = 0;
-			}
-			count++;
-			update7led(index_led++);
-			if(index_led > 3){
-				index_led = 0;
-			}
-			set_timer(&timer, TIME);
+		if (timer0_flag == 1) {
+			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+			setTimer0(2000);
 		}
 	}
 	/* USER CODE END 3 */
@@ -261,47 +246,9 @@ static void MX_GPIO_Init(void) {
 }
 
 /* USER CODE BEGIN 4 */
-void update_led_buf(uint8_t hour, uint8_t minute) {
-	if (0 <= hour && hour < 24 && 0 <= minute && minute < 60) {
-		led_buffer[0] = hour / 10;
-		led_buffer[1] = hour % 10;
-		led_buffer[2] = minute / 10;
-		led_buffer[3] = minute % 10;
-	}
-}
-void off_all7led() {
-	uint16_t pin = GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9;
-	HAL_GPIO_WritePin(GPIOA, pin, 1);
-}
-void update7led(uint8_t i) {
-	switch (i) {
-	case 0:
-		off_all7led();
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 0);
-		display7SEG(&led, led_buffer[0]);
-		break;
-	case 1:
-		off_all7led();
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, 0);
-		display7SEG(&led, led_buffer[1]);
-		break;
-	case 2:
-		off_all7led();
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, 0);
-		display7SEG(&led, led_buffer[2]);
-		break;
-	case 3:
-		off_all7led();
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
-		display7SEG(&led, led_buffer[3]);
-		break;
-	default:
-		off_all7led();
-	}
-}
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	run_timer(&timer);
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	timer_run();
 }
 /* USER CODE END 4 */
 
