@@ -12,7 +12,6 @@ struct s_timer {
 	uint8_t st;
 	unsigned long time;
 };
-void init_timer(struct s_timer* timer);
 void set_timer(struct s_timer* timer, const unsigned long time);
 void run_timer(struct s_timer* timer);
 

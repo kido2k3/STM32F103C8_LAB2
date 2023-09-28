@@ -1,3 +1,0 @@
-../Core/Src/segment_led.c:9:6:display	16	static
-../Core/Src/segment_led.c:20:6:display7SEG	32	static
-../Core/Src/segment_led.c:56:6:init7SEG	24	static

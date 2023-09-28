@@ -22,7 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include"software_timer.h"
-#include"segment_led.h"
+#include "led.h"
+#include<string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,11 +33,12 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TIME 25//0.25s
+#define TIME 1//0.001s
 #define max_led 4
 enum state {
 	DISPLAY1, DISPLAY2, DISPLAY3, DISPLAY4
 };
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -64,7 +66,6 @@ static void MX_TIM2_Init(void);
 struct s_timer timer;
 struct s_timer timer1;
 uint8_t led_buffer[max_led] = { 0, 7, 5, 9 };
-unsigned index_led = 0;
 struct seven_led led;
 void update7led(uint8_t i);
 void update_led_buf(uint8_t hour, uint8_t minute);
@@ -88,6 +89,30 @@ int main(void) {
 	uint8_t count = 0;
 	init7SEG(&led, GPIOB, GPIO_PIN_0, GPIO_PIN_1, GPIO_PIN_2, GPIO_PIN_3,
 	GPIO_PIN_4, GPIO_PIN_5, GPIO_PIN_6);
+	struct led8x8 m_led;
+	int index = 0;
+	int index1 = 0;
+	char *str = "NHAT";
+	unsigned int len = strlen(str);
+	uint8_t cur_buffer[8] = { 0 };
+	if (index < len) {
+		memcpy(cur_buffer, chu_cai + (str[index++] - 65) * 8,
+				sizeof(cur_buffer));
+		if (index >= len)
+			index = 0;
+	}
+	uint8_t nex_buffer[8] = { 0 };
+	if (index < len) {
+		memcpy(nex_buffer, chu_cai + (str[index++] - 65) * 8,
+				sizeof(nex_buffer));
+		if (index >= len)
+			index = 0;
+	}
+	initLED8x8(&m_led, GPIOA, GPIO_PIN_1, GPIO_PIN_2, GPIO_PIN_3, GPIO_PIN_10,
+	GPIO_PIN_11, GPIO_PIN_12, GPIO_PIN_13, GPIO_PIN_14, GPIOB,
+	GPIO_PIN_7, GPIO_PIN_8, GPIO_PIN_9, GPIO_PIN_10, GPIO_PIN_11,
+	GPIO_PIN_12, GPIO_PIN_13, GPIO_PIN_14, cur_buffer);
+
 	/* USER CODE END Init */
 
 	/* Configure the system clock */
@@ -105,36 +130,40 @@ int main(void) {
 	set_timer(&timer, TIME);
 	uint8_t hour = 15, minute = 8, second = 50;
 	update_led_buf(hour, minute);
+
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
+		if (count > 10) {
+			int flat = 0;
+			for (int i = 0; i < 8; i++) {
+				m_led.buffer[i] = (m_led.buffer[i] << 1) | (nex_buffer[i] >> 7);
+				nex_buffer[i] = nex_buffer[i] << 1;
+				if (nex_buffer[i] != 0) {
+					flat = 1;
+				}
+			}
+			if (!flat) {
+				memcpy(nex_buffer, chu_cai + (str[index++] - 65) * 8,
+						sizeof(nex_buffer));
+				if (index >= len)
+					index = 0;
+			}
+			count = 0;
+		}
 		if (!timer.st) {
-			if (count > 3) {
-				second++;
-				if (second >= 60) {
-					second = 0;
-					minute++;
-				}
-				if (minute >= 60) {
-					minute = 0;
-					hour++;
-				}
-				if (hour >= 24) {
-					hour = 0;
-				}
-				update_led_buf(hour, minute);
-				HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4);
-				count = 0;
+			updateLED8x8(&m_led, index1++);
+			if (index1 > 7) {
+				index1 = 0;
 			}
 			count++;
-			update7led(index_led++);
-			if(index_led > 3){
-				index_led = 0;
-			}
 			set_timer(&timer, TIME);
 		}
+		/* USER CODE END WHILE */
+
+		/* USER CODE BEGIN 3 */
 	}
 	/* USER CODE END 3 */
 }
@@ -230,27 +259,39 @@ static void MX_GPIO_Init(void) {
 
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(GPIOA,
-	GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9,
-			GPIO_PIN_RESET);
+			GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5
+					| GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9
+					| GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13
+					| GPIO_PIN_14, GPIO_PIN_RESET);
 
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(GPIOB,
-			GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4
-					| GPIO_PIN_5 | GPIO_PIN_6, GPIO_PIN_RESET);
+			GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_10 | GPIO_PIN_11
+					| GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_3
+					| GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7
+					| GPIO_PIN_8 | GPIO_PIN_9, GPIO_PIN_RESET);
 
-	/*Configure GPIO pins : PA4 PA5 PA6 PA7
-	 PA8 PA9 */
-	GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7
-			| GPIO_PIN_8 | GPIO_PIN_9;
+	/*Configure GPIO pins : PA1 PA2 PA3 PA4
+	 PA5 PA6 PA7 PA8
+	 PA9 PA10 PA11 PA12
+	 PA13 PA14 */
+	GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4
+			| GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9
+			| GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13
+			| GPIO_PIN_14;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-	/*Configure GPIO pins : PB0 PB1 PB2 PB3
-	 PB4 PB5 PB6 */
-	GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3
-			| GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6;
+	/*Configure GPIO pins : PB0 PB1 PB2 PB10
+	 PB11 PB12 PB13 PB14
+	 PB3 PB4 PB5 PB6
+	 PB7 PB8 PB9 */
+	GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_10
+			| GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_3
+			| GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8
+			| GPIO_PIN_9;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -301,7 +342,6 @@ void update7led(uint8_t i) {
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	run_timer(&timer);
-
 }
 /* USER CODE END 4 */
 
