@@ -86,28 +86,11 @@ int main(void) {
 	HAL_Init();
 
 	/* USER CODE BEGIN Init */
-	uint8_t count = 0;
-	init7SEG(&led, GPIOB, GPIO_PIN_0, GPIO_PIN_1, GPIO_PIN_2, GPIO_PIN_3,
-	GPIO_PIN_4, GPIO_PIN_5, GPIO_PIN_6);
 	struct led8x8 m_led;
-	int index = 0;
 	int index1 = 0;
-	char *str = "NHAT";
-	unsigned int len = strlen(str);
 	uint8_t cur_buffer[8] = { 0 };
-	if (index < len) {
-		memcpy(cur_buffer, chu_cai + (str[index++] - 65) * 8,
-				sizeof(cur_buffer));
-		if (index >= len)
-			index = 0;
-	}
-	uint8_t nex_buffer[8] = { 0 };
-	if (index < len) {
-		memcpy(nex_buffer, chu_cai + (str[index++] - 65) * 8,
-				sizeof(nex_buffer));
-		if (index >= len)
-			index = 0;
-	}
+	memcpy(cur_buffer, chu_cai + ('A' - 65) * 8, sizeof(cur_buffer));
+
 	initLED8x8(&m_led, GPIOA, GPIO_PIN_1, GPIO_PIN_2, GPIO_PIN_3, GPIO_PIN_10,
 	GPIO_PIN_11, GPIO_PIN_12, GPIO_PIN_13, GPIO_PIN_14, GPIOB,
 	GPIO_PIN_7, GPIO_PIN_8, GPIO_PIN_9, GPIO_PIN_10, GPIO_PIN_11,
@@ -128,37 +111,16 @@ int main(void) {
 	/* USER CODE BEGIN 2 */
 	HAL_TIM_Base_Start_IT(&htim2);
 	set_timer(&timer, TIME);
-	uint8_t hour = 15, minute = 8, second = 50;
-	update_led_buf(hour, minute);
-
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
-		if (count > 10) {
-			int flat = 0;
-			for (int i = 0; i < 8; i++) {
-				m_led.buffer[i] = (m_led.buffer[i] << 1) | (nex_buffer[i] >> 7);
-				nex_buffer[i] = nex_buffer[i] << 1;
-				if (nex_buffer[i] != 0) {
-					flat = 1;
-				}
-			}
-			if (!flat) {
-				memcpy(nex_buffer, chu_cai + (str[index++] - 65) * 8,
-						sizeof(nex_buffer));
-				if (index >= len)
-					index = 0;
-			}
-			count = 0;
-		}
 		if (!timer.st) {
 			updateLED8x8(&m_led, index1++);
 			if (index1 > 7) {
 				index1 = 0;
 			}
-			count++;
 			set_timer(&timer, TIME);
 		}
 		/* USER CODE END WHILE */
