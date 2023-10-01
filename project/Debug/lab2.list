@@ -588,9 +588,9 @@ void update7led(uint8_t i) {
  800043e:	f44f 7100 	mov.w	r1, #512	; 0x200
  8000442:	4809      	ldr	r0, [pc, #36]	; (8000468 <update7led+0xb4>)
  8000444:	f000 fd28 	bl	8000e98 <HAL_GPIO_WritePin>
-		display7SEG(&led, led_buffer[2]);
+		display7SEG(&led, led_buffer[3]);
  8000448:	4b08      	ldr	r3, [pc, #32]	; (800046c <update7led+0xb8>)
- 800044a:	789b      	ldrb	r3, [r3, #2]
+ 800044a:	78db      	ldrb	r3, [r3, #3]
  800044c:	b29b      	uxth	r3, r3
  800044e:	4619      	mov	r1, r3
  8000450:	4807      	ldr	r0, [pc, #28]	; (8000470 <update7led+0xbc>)
