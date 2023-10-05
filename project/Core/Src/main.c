@@ -93,7 +93,7 @@ int main(void) {
 	GPIO_PIN_4, GPIO_PIN_5, GPIO_PIN_6);
 	struct led8x8 m_led;
 	int index1 = 0;
-	char *str = "AB CD";
+	char *str = "PHAT";
 	initLED8x8(&m_led, GPIOA, GPIO_PIN_1, GPIO_PIN_2, GPIO_PIN_3, GPIO_PIN_10,
 	GPIO_PIN_11, GPIO_PIN_12, GPIO_PIN_13, GPIO_PIN_14, GPIOB,
 	GPIO_PIN_7, GPIO_PIN_8, GPIO_PIN_9, GPIO_PIN_10, GPIO_PIN_11,

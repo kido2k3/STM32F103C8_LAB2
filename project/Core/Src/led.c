@@ -86,9 +86,7 @@ void shift_once(struct led8x8 *led, unsigned int str_len, char c) {
 	}
 
 	for (int i = 0; i < 8; i++) {
-		if (led->count_shift_for_space) {
-			led->cur_buffer[i] = led->cur_buffer[i] | 0;
-		} else {
+		 {
 			led->cur_buffer[i] = led->cur_buffer[i] | (led->nex_buffer[i] >> 7);
 			led->nex_buffer[i] <<= 1;
 		}
