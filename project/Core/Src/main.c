@@ -34,11 +34,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define TIME 1//0.001s
-#define max_led 4
-enum state {
-	DISPLAY1, DISPLAY2, DISPLAY3, DISPLAY4
-};
-
+#define TIME1 100 // 1s
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -65,10 +61,6 @@ static void MX_TIM2_Init(void);
 /* USER CODE BEGIN 0 */
 struct s_timer timer;
 struct s_timer timer1;
-uint8_t led_buffer[max_led] = { 0, 7, 5, 9 };
-struct seven_led led;
-void update7led(uint8_t i);
-void update_led_buf(uint8_t hour, uint8_t minute);
 /* USER CODE END 0 */
 
 /**
@@ -89,7 +81,8 @@ int main(void) {
 	struct led8x8 m_led;
 	int index1 = 0;
 	uint8_t cur_buffer[8] = { 0 };
-	memcpy(cur_buffer, chu_cai + ('A' - 65) * 8, sizeof(cur_buffer));
+	char c = 'A';
+	memcpy(cur_buffer, chu_cai + (c - 65) * 8, sizeof(cur_buffer));
 
 	initLED8x8(&m_led, GPIOA, GPIO_PIN_1, GPIO_PIN_2, GPIO_PIN_3, GPIO_PIN_10,
 	GPIO_PIN_11, GPIO_PIN_12, GPIO_PIN_13, GPIO_PIN_14, GPIOB,
@@ -111,6 +104,7 @@ int main(void) {
 	/* USER CODE BEGIN 2 */
 	HAL_TIM_Base_Start_IT(&htim2);
 	set_timer(&timer, TIME);
+	set_timer(&timer1, TIME1);
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -122,6 +116,14 @@ int main(void) {
 				index1 = 0;
 			}
 			set_timer(&timer, TIME);
+		}
+		if (!timer1.st) {
+			c++;
+			if (c > 'Z')
+				c = 'A';
+			memcpy(cur_buffer, chu_cai + (c - 65) * 8, sizeof(cur_buffer));
+			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+			set_timer(&timer1, TIME1);
 		}
 		/* USER CODE END WHILE */
 
@@ -264,46 +266,9 @@ static void MX_GPIO_Init(void) {
 }
 
 /* USER CODE BEGIN 4 */
-void update_led_buf(uint8_t hour, uint8_t minute) {
-	if (0 <= hour && hour < 24 && 0 <= minute && minute < 60) {
-		led_buffer[0] = hour / 10;
-		led_buffer[1] = hour % 10;
-		led_buffer[2] = minute / 10;
-		led_buffer[3] = minute % 10;
-	}
-}
-void off_all7led() {
-	uint16_t pin = GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9;
-	HAL_GPIO_WritePin(GPIOA, pin, 1);
-}
-void update7led(uint8_t i) {
-	switch (i) {
-	case 0:
-		off_all7led();
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 0);
-		display7SEG(&led, led_buffer[0]);
-		break;
-	case 1:
-		off_all7led();
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, 0);
-		display7SEG(&led, led_buffer[1]);
-		break;
-	case 2:
-		off_all7led();
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, 0);
-		display7SEG(&led, led_buffer[2]);
-		break;
-	case 3:
-		off_all7led();
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
-		display7SEG(&led, led_buffer[3]);
-		break;
-	default:
-		off_all7led();
-	}
-}
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	run_timer(&timer);
+	run_timer(&timer1);
 }
 /* USER CODE END 4 */
 
