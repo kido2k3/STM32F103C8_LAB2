@@ -60,7 +60,8 @@ void initLED8x8(struct led8x8 *led, GPIO_TypeDef *gpio_col, uint16_t pin_c0,
 	led->pin_r6 = pin_r6;
 	led->pin_r7 = pin_r7;
 	led->index = 0;
-	led->flat = 1;
+	led->flat_update_nex_buf = 1;
+	led->is_reset = 0;
 	unsigned len = strlen(str);
 	if (len > 0) {
 		memcpy(led->cur_buffer, chu_cai + (str[led->index++] - 65) * 8,
@@ -68,44 +69,49 @@ void initLED8x8(struct led8x8 *led, GPIO_TypeDef *gpio_col, uint16_t pin_c0,
 		if (led->index >= len)
 			led->index = 0;
 	}
-	memcpy(led->nex_buffer, chu_cai + (str[led->index++] - 65) * 8,
-			sizeof(led->nex_buffer));
-	if (led->index >= len)
-		led->index = 0;
-}
-void shift_once(struct led8x8 *led, unsigned int str_len, char c) {
-	for (int i = 0; i < 8; i++)
-		led->cur_buffer[i] = (led->cur_buffer[i] << 1);
-	if (c == ' ') {
-		led->count_shift_for_space++;
-		if (led->count_shift_for_space > 3) {
-			led->index++;
-			led->count_shift_for_space = 0;
-		}
-		led->flat = 0;
+	if (len > 1) {
+		memcpy(led->nex_buffer, chu_cai + (str[led->index++] - 65) * 8,
+				sizeof(led->nex_buffer));
+		if (led->index >= len)
+			led->index = 0;
+		for (int i = 0; i < 8; i++)
+			led->nex_buffer[i] <<= 1;
 	}
 
+}
+void shift_once(struct led8x8 *led, unsigned int str_len, char c) {
+	if (c == ' ' || led->is_reset == 2) {
+		led->shift_for_space++;
+	}
 	for (int i = 0; i < 8; i++) {
-		 {
+		led->cur_buffer[i] = (led->cur_buffer[i] << 1);
+		if (0 < led->shift_for_space && led->shift_for_space < 5) {
+		} else {
 			led->cur_buffer[i] = led->cur_buffer[i] | (led->nex_buffer[i] >> 7);
 			led->nex_buffer[i] <<= 1;
 		}
 		if (led->nex_buffer[i] != 0) {
-			led->flat = 0;
+			led->flat_update_nex_buf = 0;
 		}
 	}
 
 }
 void scrollLED8x8(struct led8x8 *led, char *str) {
-	shift_once(led, strlen(str),
-			str[(!led->index) ? led->index : (led->index - 1)]);
-	if (led->flat) {
+	shift_once(led, strlen(str), str[(led->index > 1) ? led->index - 2 : 0]);
+	if (led->flat_update_nex_buf) {
+		while(str[led->index]<'A'||str[led->index]>'Z')led->index++;
 		memcpy(led->nex_buffer, chu_cai + (str[led->index++] - 65) * 8,
 				sizeof(led->nex_buffer));
-		if (led->index >= strlen(str))
+		if (led->index >= strlen(str)){
+			led->is_reset = 1;
 			led->index = 0;
+		}
+		if(led->index == 1 && led->is_reset == 1)led->is_reset = 2;
+		if(led->index != 1 && led->is_reset == 2)led->is_reset = 0;
+
+		led->shift_for_space = 0;
 	}
-	led->flat = 1;
+	led->flat_update_nex_buf = 1;
 }
 void OffAllLed(struct led8x8 *led) {
 	uint16_t pin = led->pin_r0 | led->pin_r1 | led->pin_r2 | led->pin_r3
@@ -113,7 +119,7 @@ void OffAllLed(struct led8x8 *led) {
 	HAL_GPIO_WritePin(led->gpio_row, pin, 0);
 }
 void OnColunm(struct led8x8 *led, uint8_t buffer) {
-	uint8_t mask = 0x01;
+	uint8_t mask = 0x01; // 0000 0001
 	for (int i = 7; i >= 0; i--) {
 		switch (i) {
 		case 0:

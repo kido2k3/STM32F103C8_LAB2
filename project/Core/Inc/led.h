@@ -37,8 +37,10 @@ struct led8x8 {
 	uint8_t cur_buffer[8];
 	uint8_t nex_buffer[8];
 	int index;
-	unsigned short flat;
-	unsigned short count_shift_for_space;
+	unsigned short flat_update_nex_buf;
+	unsigned short is_reset;
+
+	unsigned short shift_for_space;
 };
 void scrollLED8x8(struct led8x8 *led, char *str);
 void updateLED8x8(struct led8x8 *led, uint8_t index);
